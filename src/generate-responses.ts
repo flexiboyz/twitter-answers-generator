@@ -4,6 +4,10 @@
  * 
  * This script reads tweets from memory files and generates responses
  * based on the context from context/neard.vision.md
+ * 
+ * Features:
+ * - Includes tweet metrics (likes, retweets, replies, views)
+ * - Generates Twitter intent URLs for pre-filled replies
  */
 
 import "dotenv/config";
@@ -20,6 +24,15 @@ mkdirSync(RESPONSES_DIR, { recursive: true });
 // Context for NEARD understanding
 function getContext(): string {
   return readFileSync(CONTEXT_FILE, "utf-8");
+}
+
+// Generate Twitter intent URL for pre-filled reply
+function generateIntentUrl(tweetUrl: string, response: string): string {
+  const tweetId = tweetUrl.split('/').pop();
+  if (!tweetId) return tweetUrl;
+  
+  const intentUrl = `https://x.com/intent/tweet?in_reply_to=${tweetId}&text=${encodeURIComponent(response)}`;
+  return intentUrl;
 }
 
 // Parse memory file content into structured tweets
@@ -100,6 +113,16 @@ function parseMemoryFile(content: string, filename: string): Array<{
   }
   
   return tweets;
+}
+
+// Format metrics display
+function formatMetrics(likes: number, retweets: number, replies: number, views: number): string {
+  const formattedLikes = likes.toLocaleString();
+  const formattedRetweets = retweets.toLocaleString();
+  const formattedReplies = replies.toLocaleString();
+  const formattedViews = views.toLocaleString();
+  
+  return `👁 ${formattedViews} | ❤️ ${formattedLikes} | 🔁 ${formattedRetweets} | 💬 ${formattedReplies}`;
 }
 
 // Generate response using the context
@@ -189,14 +212,20 @@ function main() {
   
   // Generate responses
   const timestamp = new Date().toISOString().replace(/[:T.-]/g, "-");
-  const responseFile = `${RESPONSES_DIR}/${timestamp}-${Math.random().toString(36).substr(2, 5)}.md`;
+  const randomId = Math.random().toString(36).substr(2, 5);
+  const responseFile = `${RESPONSES_DIR}/${timestamp}-${randomId}.md`;
   
   const responses: string[] = [];
   
   for (const { filename, tweets } of allTweets) {
     for (const tweet of tweets) {
       const response = generateResponse(tweet);
+      const intentUrl = generateIntentUrl(tweet.url, response);
+      const metrics = formatMetrics(tweet.likes, tweet.retweets, tweet.replies, tweet.views);
+      
       responses.push(`## @${tweet.authorHandle}
+
+${metrics}
 
 ${tweet.text}
 
@@ -204,20 +233,24 @@ ${tweet.text}
 
 ${response}
 
----
+🔗 **Tweet:** ${tweet.url}
+💬 **Quick Reply:** [Open Twitter Reply](https://x.com/intent/tweet?in_reply_to=${tweet.url.split('/').pop()}&text=${encodeURIComponent(response)})
 
-Tweet: ${tweet.url}
+---
 
 `);
       
-      console.log(`  ✍️  Response for @${tweet.authorHandle}: ${tweet.url}`);
+      console.log(`  ✍️  @${tweet.authorHandle}: ${tweet.text.substring(0, 50)}... [${metrics}]`);
     }
   }
   
   writeFileSync(responseFile, responses.join("\n\n"));
   
-  console.log(`\n✅ Generated ${responses.length} response(s) in ./${RESPONSES_DIR}/${timestamp}-${Math.random().toString(36).substr(2, 5)}.md`);
-  console.log("\n💡 Next step: Review responses and decide whether to send them or wait for human approval.");
+  console.log(`\n✅ Generated ${responses.length} response(s) in ./${RESPONSES_DIR}/${timestamp}-${randomId}.md`);
+  console.log("\n📊 Features added:");
+  console.log("   • Tweet metrics (likes, retweets, replies, views)");
+  console.log("   • Twitter intent URLs for pre-filled replies");
+  console.log("\n💡 Next step: Review responses or use the Quick Reply links!");
 }
 
 main();
