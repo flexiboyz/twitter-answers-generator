@@ -4,6 +4,7 @@
   "main": "dist/index.js",
   "scripts": {
     "report": "tsx src/index.ts",
+    "respond": "tsx src/respond.ts",
     "generate-responses": "tsx src/generate-responses.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit"
