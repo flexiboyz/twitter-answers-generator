@@ -263,6 +263,8 @@ async function main() {
           ``,
           metrics,
           ``,
+          tweet.text,
+          ``,
           `=========`,
           ``,
           reply,
