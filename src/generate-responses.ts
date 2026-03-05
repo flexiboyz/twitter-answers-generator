@@ -40,6 +40,7 @@ function parseMemoryFile(content: string, filename: string): Array<{
   author: string;
   authorHandle: string;
   text: string;
+  summary: string;
   url: string;
   timestamp: string;
   likes: number;
@@ -51,6 +52,7 @@ function parseMemoryFile(content: string, filename: string): Array<{
     author: string;
     authorHandle: string;
     text: string;
+    summary: string;
     url: string;
     timestamp: string;
     likes: number;
@@ -99,10 +101,15 @@ function parseMemoryFile(content: string, filename: string): Array<{
     
     if (!tweetText || tweetText.length < 20) continue;
     
+    // Create one-sentence summary (first sentence or first 150 chars)
+    const sentences = tweetText.split('. ').filter(s => s.trim());
+    const summary = sentences[0] ? sentences[0].trim() + '.' : tweetText.substring(0, 150) + '...';
+    
     tweets.push({
       author,
       authorHandle,
       text: tweetText,
+      summary,
       url: urlMatch[1],
       timestamp: timestampMatch ? timestampMatch[1].trim() : "",
       likes: parseInt(likesMatch?.[1] || "0"),
@@ -225,22 +232,21 @@ function main() {
       
       responses.push(`## @${tweet.authorHandle}
 
-${metrics}
+**Summary:** ${tweet.summary}
 
-${tweet.text}
+${metrics}
 
 =========
 
 ${response}
 
-🔗 **Tweet:** ${tweet.url}
-💬 **Quick Reply:** [Open Twitter Reply](https://x.com/intent/tweet?in_reply_to=${tweet.url.split('/').pop()}&text=${encodeURIComponent(response)})
+[Reply to Tweet →](https://x.com/intent/tweet?in_reply_to=${tweet.url.split('/').pop()}&text=${encodeURIComponent(response)})
 
 ---
 
 `);
       
-      console.log(`  ✍️  @${tweet.authorHandle}: ${tweet.text.substring(0, 50)}... [${metrics}]`);
+      console.log(`  ✍️  @${tweet.authorHandle}: ${tweet.summary} [${metrics}]`);
     }
   }
   
